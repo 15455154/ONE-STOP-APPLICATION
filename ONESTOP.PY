@@ -1,19 +1,14 @@
 import tkinter as tk
-from tkinter import simpledialog, messagebox
-from tkinter import filedialog
-from tkinter.filedialog import askopenfilename
+from tkinter import simpledialog, messagebox, filedialog
 from PIL import Image, ImageTk
 import csv
 import pandas as pd
 from openpyxl import load_workbook
 from openpyxl.chart import BarChart3D, Reference
+import os
 
-
-# Paths to your logo and input/output files
-logo_path = r"testing\Designer (1).ico"
- # Update this path
-  # Update this path
-excel_file = r'D:\python codes\testing\output.xlsx'  # Update this path
+# Ensure the path is correct
+logo_path = os.path.join(os.path.dirname(__file__), 'Designer (1).ico')
 
 def read_txt_and_convert_to_csv(input_file, output_file):
     with open(input_file, 'r') as txt_file, open(output_file, 'w', newline='') as csv_file:
@@ -41,15 +36,22 @@ def open_new_window(button_text):
     new_window = tk.Toplevel()
     new_window.title(button_text)
     new_window.geometry("200x150")
-    new_window.iconbitmap(r"testing\Designer (1).ico")
+    try:
+        new_window.iconbitmap(logo_path)
+    except tk.TclError:
+        messagebox.showerror("Error", "Icon file not found!")
     label = tk.Label(new_window, text=f"This is the {button_text} window")
     label.pack(pady=20)
 
 def handle_button_1():
-    input_file = askopenfilename() 
-    output_file = filedialog.asksaveasfile()
-    read_txt_and_convert_to_csv(input_file, output_file)
-    create_excel_with_3d_clustered_chart(output_file, excel_file)
+    input_file = filedialog.askopenfilename(title="Select text file", filetypes=[("Text files", "*.txt")])
+    if input_file:
+        csv_output_file = filedialog.asksaveasfilename(defaultextension=".csv", filetypes=[("CSV files", "*.csv")], title="Save CSV file as")
+        if csv_output_file:
+            read_txt_and_convert_to_csv(input_file, csv_output_file)
+            excel_output_file = filedialog.asksaveasfilename(defaultextension=".xlsx", filetypes=[("Excel files", "*.xlsx")], title="Save Excel file as")
+            if excel_output_file:
+                create_excel_with_3d_clustered_chart(csv_output_file, excel_output_file)
     open_new_window("Button 1")
 
 def handle_button_2():
@@ -102,8 +104,10 @@ def handle_button_2():
     }
 
     df = pd.DataFrame(data)
-    df.to_excel('D:\python codes\testing\bio_data.xlsx', index=False)
-    messagebox.showinfo("Info", "Data has been saved to bio_data.xlsx")
+    save_location = filedialog.asksaveasfilename(defaultextension=".xlsx", filetypes=[("Excel files", "*.xlsx")], title="Save Bio Data as")
+    if save_location:
+        df.to_excel(save_location, index=False)
+        messagebox.showinfo("Info", f"Data has been saved to {save_location}")
     open_new_window("Button 2")
 
 def handle_button_3():
@@ -133,7 +137,6 @@ def handle_button_3():
             messagebox.showerror("Error", "Invalid Input")
     open_new_window("Button 3")
 
-# Function to handle the fourth button's functionality (Python basics AI)
 def handle_button_4():
     basics_info = {
         "print": "The print() function outputs text to the console. Example: print('Hello, World!')",
@@ -159,7 +162,10 @@ def display_popup():
     root = tk.Tk()
     root.title("ONE STOP")
     root.geometry("400x400")
-    root.iconbitmap(r"testing\Designer (1).ico")
+    try:
+        root.iconbitmap(logo_path)
+    except tk.TclError:
+        messagebox.showerror("Error", "Icon file not found!")
     image = Image.open(logo_path)
     image = image.resize((100, 100), Image.LANCZOS)
     logo = ImageTk.PhotoImage(image)
