@@ -35,12 +35,13 @@ def create_excel_with_3d_clustered_chart(csv_file, excel_file):
 def open_new_window(button_text):
     new_window = tk.Toplevel()
     new_window.title(button_text)
-    new_window.geometry("200x150")
+    new_window.geometry("300x200")
+    new_window.configure(bg='#14a3c7')
     try:
         new_window.iconbitmap(logo_path)
     except tk.TclError:
         messagebox.showerror("Error", "Icon file not found!")
-    label = tk.Label(new_window, text=f"This is the {button_text} window")
+    label = tk.Label(new_window, text=f"This is the {button_text} window", bg='#14a3c7', fg='#000000', font=('Arial', 12))
     label.pack(pady=20)
 
 def handle_button_1():
@@ -52,7 +53,7 @@ def handle_button_1():
             excel_output_file = filedialog.asksaveasfilename(defaultextension=".xlsx", filetypes=[("Excel files", "*.xlsx")], title="Save Excel file as")
             if excel_output_file:
                 create_excel_with_3d_clustered_chart(csv_output_file, excel_output_file)
-    open_new_window("Button 1")
+    open_new_window("TXT TO EXCEL")
 
 def handle_button_2():
     messagebox.showinfo("Info", "Hi, Mister! This is the bio data collector.\nI will collect a few of your details. Let's start!")
@@ -108,7 +109,7 @@ def handle_button_2():
     if save_location:
         df.to_excel(save_location, index=False)
         messagebox.showinfo("Info", f"Data has been saved to {save_location}")
-    open_new_window("Button 2")
+    open_new_window("BIO DATA TO EXCEL")
 
 def handle_button_3():
     def add(x, y): return x + y
@@ -135,7 +136,7 @@ def handle_button_3():
             break
         else:
             messagebox.showerror("Error", "Invalid Input")
-    open_new_window("Button 3")
+    open_new_window("CALCULATOR")
 
 def handle_button_4():
     basics_info = {
@@ -156,12 +157,13 @@ def handle_button_4():
         else:
             break
 
-    open_new_window("Button 4")
+    open_new_window("LEARN PYTHON")
 
 def display_popup():
     root = tk.Tk()
     root.title("ONE STOP")
     root.geometry("400x400")
+    root.configure(bg='#20948B')
     try:
         root.iconbitmap(logo_path)
     except tk.TclError:
@@ -169,12 +171,12 @@ def display_popup():
     image = Image.open(logo_path)
     image = image.resize((100, 100), Image.LANCZOS)
     logo = ImageTk.PhotoImage(image)
-    label = tk.Label(root, image=logo)
+    label = tk.Label(root, image=logo, bg='#6AB187')
     label.pack(pady=10)
-    button_texts = ["Button 1", "Button 2", "Button 3", "Button 4"]
+    button_texts = ["TXT TO EXCEL", "BIODATA TO EXCEL", "CALCULATOR", "LEARN PYTHON"]
     button_commands = [handle_button_1, handle_button_2, handle_button_3, handle_button_4]
     for text, command in zip(button_texts, button_commands):
-        button = tk.Button(root, text=text, command=command)
+        button = tk.Button(root, text=text, command=command, bg='#6AB187', fg='black', font=('Roboto', 15))
         button.pack(side=tk.TOP, padx=5, pady=5)
     root.mainloop()
 
