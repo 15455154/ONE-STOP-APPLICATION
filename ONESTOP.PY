@@ -6,6 +6,7 @@ import pandas as pd
 from openpyxl import load_workbook
 from openpyxl.chart import BarChart3D, Reference
 import os
+from pytube import YouTube
 
 # Ensure the path is correct
 logo_path = os.path.join(os.path.dirname(__file__), 'Designer (1).ico')
@@ -32,9 +33,29 @@ def create_excel_with_3d_clustered_chart(csv_file, excel_file):
     ws.add_chart(chart, "E5")
     wb.save(excel_file)
 
+def jpg_to_png():
+    import_filename = filedialog.askopenfilename()
+    if import_filename.endswith(".jpg"):
+        im1 = Image.open(import_filename)
+        export_filename = filedialog.asksaveasfilename(defaultextension=".png")
+        im1.save(export_filename)
+        messagebox.showinfo("Success", "Your image has been converted to PNG.")
+    else:
+        messagebox.showerror("Error", "Please select a .jpg file.")
+
+def png_to_jpg():
+    import_filename = filedialog.askopenfilename()
+    if import_filename.endswith(".png"):
+        im1 = Image.open(import_filename)
+        export_filename = filedialog.asksaveasfilename(defaultextension=".jpg")
+        im1.save(export_filename)
+        messagebox.showinfo("Success", "Your image has been converted to JPG.")
+    else:
+        messagebox.showerror("Error", "Please select a .png file.")
+
 def open_new_window(button_text):
     new_window = tk.Toplevel()
-    new_window.title(button_text)
+    new_window.title("ONE STOP")
     new_window.geometry("300x200")
     new_window.configure(bg='#14a3c7')
     try:
@@ -44,16 +65,35 @@ def open_new_window(button_text):
     label = tk.Label(new_window, text=f"This is the {button_text} window", bg='#14a3c7', fg='#000000', font=('Arial', 12))
     label.pack(pady=20)
 
+def converters_window(button_text):
+    new_window = tk.Toplevel()
+    new_window.title("ONE STOP")
+    new_window.geometry("500x500")
+    new_window.configure(bg='#14a3c7')
+    try:
+        new_window.iconbitmap(logo_path)
+    except tk.TclError:
+        messagebox.showerror("Error", "Icon file not found!")
+    button_texts = ["JPG TO PNG", "PNG TO JPG"]
+    button_commands = [jpg_to_png, png_to_jpg]
+    for text, command in zip(button_texts, button_commands):
+        button = tk.Button(new_window, text=text, command=command, bg='#6AB187', fg='black', font=('Roboto', 15))
+        button.pack(side=tk.TOP, padx=5, pady=5)
+    label = tk.Label(new_window, text="This is a file converters section, here you can convert files", bg='#14a3c7', fg='#000000', font=('Arial', 12))
+    label.pack(pady=20)
+
+def utomp4():
+    link = simpledialog.askstring("Input","Please enter the video's link")
+    if link:
+        yt = YouTube(link)
+        video = yt.streams.filter(file_extension='mp4').first()
+        save_path = filedialog.asksaveasfilename(defaultextension=".mp4")
+        if save_path:
+            video.download(save_path)
+            messagebox.showinfo("Success", "The video has been downloaded as MP4.")
+
 def handle_button_1():
-    input_file = filedialog.askopenfilename(title="Select text file", filetypes=[("Text files", "*.txt")])
-    if input_file:
-        csv_output_file = filedialog.asksaveasfilename(defaultextension=".csv", filetypes=[("CSV files", "*.csv")], title="Save CSV file as")
-        if csv_output_file:
-            read_txt_and_convert_to_csv(input_file, csv_output_file)
-            excel_output_file = filedialog.asksaveasfilename(defaultextension=".xlsx", filetypes=[("Excel files", "*.xlsx")], title="Save Excel file as")
-            if excel_output_file:
-                create_excel_with_3d_clustered_chart(csv_output_file, excel_output_file)
-    open_new_window("TXT TO EXCEL")
+    converters_window("CONVERTERS")
 
 def handle_button_2():
     messagebox.showinfo("Info", "Hi, Mister! This is the bio data collector.\nI will collect a few of your details. Let's start!")
@@ -173,7 +213,7 @@ def display_popup():
     logo = ImageTk.PhotoImage(image)
     label = tk.Label(root, image=logo, bg='#6AB187')
     label.pack(pady=10)
-    button_texts = ["TXT TO EXCEL", "BIODATA TO EXCEL", "CALCULATOR", "LEARN PYTHON"]
+    button_texts = ["CONVERTERS", "BIODATA TO EXCEL", "CALCULATOR", "LEARN PYTHON"]
     button_commands = [handle_button_1, handle_button_2, handle_button_3, handle_button_4]
     for text, command in zip(button_texts, button_commands):
         button = tk.Button(root, text=text, command=command, bg='#6AB187', fg='black', font=('Roboto', 15))
