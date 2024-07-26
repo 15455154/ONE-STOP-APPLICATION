@@ -1,6 +1,6 @@
 import tkinter as tk
 from tkinter import simpledialog, messagebox, filedialog
-from PIL import Image, ImageTk
+from PIL import Image, ImageTk, ImageEnhance
 import csv
 import pandas as pd
 from openpyxl import load_workbook
@@ -202,22 +202,37 @@ def handle_button_4():
 def display_popup():
     root = tk.Tk()
     root.title("ONE STOP")
-    root.geometry("400x400")
-    root.configure(bg='#20948B')
+    
+    # Make the window full screen
+    root.attributes('-fullscreen', True)
+    root.bind("<F11>", lambda event: root.attributes('-fullscreen', not root.attributes('-fullscreen')))
+    root.bind("<Escape>", lambda event: root.attributes('-fullscreen', False))
+    
+    # Load and resize the background image to full screen size
+    bg_image_path = os.path.join(os.path.dirname(__file__), 'bg.png')
     try:
-        root.iconbitmap(logo_path)
-    except tk.TclError:
-        messagebox.showerror("Error", "Icon file not found!")
-    image = Image.open(logo_path)
-    image = image.resize((100, 100), Image.LANCZOS)
-    logo = ImageTk.PhotoImage(image)
-    label = tk.Label(root, image=logo, bg='#6AB187')
-    label.pack(pady=10)
+        screen_width = root.winfo_screenwidth()
+        screen_height = root.winfo_screenheight()
+        bg_image = Image.open(bg_image_path)
+        bg_image = bg_image.resize((screen_width, screen_height), Image.LANCZOS)
+        bg_image = ImageEnhance.Brightness(bg_image).enhance(0.5)
+        bg_photo = ImageTk.PhotoImage(bg_image)
+    except Exception as e:
+        messagebox.showerror("Error", f"Failed to load background image: {e}")
+        print(f"Error: {e}")  # Print the error for debugging
+        return
+
+    # Create a canvas to hold the background image
+    canvas = tk.Canvas(root, width=screen_width, height=screen_height)
+    canvas.pack(fill="both", expand=True)
+    # Place the background image on the canvas
+    canvas.create_image(0, 0, image=bg_photo, anchor="nw")
+
     button_texts = ["CONVERTERS", "BIODATA TO EXCEL", "CALCULATOR", "LEARN PYTHON"]
     button_commands = [handle_button_1, handle_button_2, handle_button_3, handle_button_4]
-    for text, command in zip(button_texts, button_commands):
+    for i, (text, command) in enumerate(zip(button_texts, button_commands)):
         button = tk.Button(root, text=text, command=command, bg='#6AB187', fg='black', font=('Roboto', 15))
-        button.pack(side=tk.TOP, padx=5, pady=5)
-    root.mainloop()
+        canvas.create_window(screen_width // 2, 50 + i * 60, window=button)  # Center buttons on the canvas
 
+    root.mainloop()
 display_popup()
