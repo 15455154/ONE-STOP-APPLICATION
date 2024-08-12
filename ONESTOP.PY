@@ -1,15 +1,17 @@
 import tkinter as tk
 from tkinter import simpledialog, messagebox, filedialog
-from PIL import Image, ImageTk, ImageEnhance
+from PIL import Image, ImageTk
 import csv
 import pandas as pd
 from openpyxl import load_workbook
 from openpyxl.chart import BarChart3D, Reference
 import os
-from pytube import YouTube
+import yt_dlp
+from pydub import AudioSegment
+from datetime import datetime 
 
 # Ensure the path is correct
-logo_path = os.path.join(os.path.dirname(__file__), 'Designer (1).ico')
+logo_path = os.path.join(os.path.dirname(_file_), 'Designer (1).ico')
 
 def read_txt_and_convert_to_csv(input_file, output_file):
     with open(input_file, 'r') as txt_file, open(output_file, 'w', newline='') as csv_file:
@@ -32,30 +34,51 @@ def create_excel_with_3d_clustered_chart(csv_file, excel_file):
     chart.set_categories(categories)
     ws.add_chart(chart, "E5")
     wb.save(excel_file)
-
 def jpg_to_png():
+    global im1
+ 
+    # import the image from the folder
     import_filename = filedialog.askopenfilename()
     if import_filename.endswith(".jpg"):
+ 
         im1 = Image.open(import_filename)
+ 
+        # after converting the image save to desired
+        # location with the Extersion .png
         export_filename = filedialog.asksaveasfilename(defaultextension=".png")
         im1.save(export_filename)
-        messagebox.showinfo("Success", "Your image has been converted to PNG.")
+ 
+        # displaying the Messaging box with the Success
+        messagebox.showinfo("success ", "your Image converted to Png")
     else:
-        messagebox.showerror("Error", "Please select a .jpg file.")
-
+ 
+        # if Image select is not with the Format of .jpg 
+        # then display the Error
+        Label_2 = Label(root, text="Error!", width=20,
+                        fg="red", font=("bold", 15))
+        Label_2.place(x=80, y=280)
+        messagebox.showerror("Fail!!", "Something Went Wrong...")
+    
 def png_to_jpg():
+    global im1
     import_filename = filedialog.askopenfilename()
+ 
     if import_filename.endswith(".png"):
         im1 = Image.open(import_filename)
         export_filename = filedialog.asksaveasfilename(defaultextension=".jpg")
         im1.save(export_filename)
-        messagebox.showinfo("Success", "Your image has been converted to JPG.")
+ 
+        messagebox.showinfo("success ", "your Image converted to jpg ")
     else:
-        messagebox.showerror("Error", "Please select a .png file.")
+        Label_2 = Label(root, text="Error!", width=20,
+                        fg="red", font=("bold", 15))
+        Label_2.place(x=80, y=280)
+ 
+        messagebox.showinfo("Fail!!", "Something Went Wrong...")    
 
 def open_new_window(button_text):
     new_window = tk.Toplevel()
-    new_window.title("ONE STOP")
+    new_window.title(button_text)
     new_window.geometry("300x200")
     new_window.configure(bg='#14a3c7')
     try:
@@ -67,13 +90,9 @@ def open_new_window(button_text):
 
 def converters_window(button_text):
     new_window = tk.Toplevel()
-    new_window.title("ONE STOP")
+    new_window.title(button_text)
     new_window.geometry("500x500")
     new_window.configure(bg='#14a3c7')
-    try:
-        new_window.iconbitmap(logo_path)
-    except tk.TclError:
-        messagebox.showerror("Error", "Icon file not found!")
     button_texts = ["JPG TO PNG", "PNG TO JPG"]
     button_commands = [jpg_to_png, png_to_jpg]
     for text, command in zip(button_texts, button_commands):
@@ -83,16 +102,152 @@ def converters_window(button_text):
     label.pack(pady=20)
 
 def utomp4():
-    link = simpledialog.askstring("Input","Please enter the video's link")
-    if link:
-        yt = YouTube(link)
-        video = yt.streams.filter(file_extension='mp4').first()
-        save_path = filedialog.asksaveasfilename(defaultextension=".mp4")
-        if save_path:
-            video.download(save_path)
-            messagebox.showinfo("Success", "The video has been downloaded as MP4.")
 
-def handle_button_1():
+    ydl_opts = {
+        'format': 'best',
+        'outtmpl': os.path.join(save_path, '%(title)s.%(ext)s'),
+        'verbose': True,  # Enable verbose logging
+    }
+    
+    try:
+        with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+            ydl.download([url])
+            info_dict = ydl.extract_info(url, download=False)
+            print(f"Downloaded: {info_dict.get('title')}")
+    except Exception as e:
+        print(f"An error occurred: {e}")
+
+def download_video():
+    video_url = simpledialog.askstring("Input", "Please enter the video's link")
+    if not video_url:
+        messagebox.showerror("Error", "No URL provided.")
+        return
+
+    save_directory = filedialog.askdirectory()
+    if not save_directory:
+        messagebox.showerror("Error", "No save location provided.")
+        return
+
+    # Ensure the save path is a valid path with filename placeholder
+    save_path = os.path.join(save_directory, '%(title)s.%(ext)s')
+
+    ydl_opts = {
+        'format': 'best',
+        'outtmpl': save_path,
+        'verbose': True,
+    }
+
+    try:
+        with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+            ydl.download([video_url])
+            info_dict = ydl.extract_info(video_url, download=False)
+            messagebox.showinfo("Success", f"Downloaded: {info_dict.get('title')}")
+    except Exception as e:
+        print(f"An error occurred: {e}")
+        messagebox.showerror("Error", f"An error occurred: {e}")
+def download_video_as_audio(url, output_path, filename):
+    # Define options for yt-dlp
+    ydl_opts = {
+        'format': 'bestaudio/best',
+        'outtmpl': os.path.join(output_path, 'temp_audio.%(ext)s'),
+        'postprocessors': [{
+            'key': 'FFmpegExtractAudio',
+            'preferredcodec': 'mp3',
+            'preferredquality': '320',  # Higher bitrate for better quality
+        }],
+        'postprocessor_args': [
+            '-ar', '44100'  # Standard audio sample rate
+        ],
+        'prefer_ffmpeg': True,
+        'noplaylist': True,
+    }
+
+    # Download the video
+    try:
+        with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+            ydl.download([url])
+    except Exception as e:
+        raise Exception(f"An error occurred during download: {e}")
+
+    # Convert to MP3 and save it in the desired format
+    temp_audio_path = os.path.join(output_path, 'temp_audio.mp3')
+    
+    try:
+        # Load the downloaded audio
+        audio = AudioSegment.from_mp3(temp_audio_path)
+        # Export to MP3
+        audio.export(filename, format='mp3')
+        print(f"Converted to MP3: {filename}")
+    except Exception as e:
+        raise Exception(f"An error occurred during conversion: {e}")
+    finally:
+        # Clean up the temporary file
+        if os.path.exists(temp_audio_path):
+            os.remove(temp_audio_path)
+
+
+    # Download the video
+    with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+        ydl.download([url])
+    
+    # Convert to MP3 and save it in the desired format
+    temp_audio_path = os.path.join(output_path, 'temp_audio.mp3')
+    final_mp3_path = os.path.join(output_path, filename)
+
+    try:
+        # Load the downloaded audio
+        audio = AudioSegment.from_mp3(temp_audio_path)
+        # Export to MP3
+        audio.export(final_mp3_path, format='mp3')
+        print(f"Converted to MP3: {final_mp3_path}")
+    except Exception as e:
+        print(f"An error occurred: {e}")
+
+    # Clean up the temporary file
+    if os.path.exists(temp_audio_path):
+        os.remove(temp_audio_path)
+
+def downloadaudio():
+    video_url = simpledialog.askstring("Input", "Please enter the video's link")
+    if not video_url:
+        messagebox.showerror("Error", "No URL provided.")
+        return
+
+    save_directory = filedialog.askdirectory()
+    if not save_directory:
+        messagebox.showerror("Error", "No save location provided.")
+        return
+    
+    filename = simpledialog.askstring("Input", "Please enter your file name")
+    if not filename:
+        messagebox.showerror("Error", "No file name provided.")
+        return
+
+    # Ensure the filename has the .mp3 extension
+    if not filename.endswith('.mp3'):
+        filename += '.mp3'
+
+    final_mp3_path = os.path.join(os.path.dirname(save_directory), filename)
+
+    try:
+        download_video_as_audio(video_url, os.path.dirname(save_directory), final_mp3_path)
+        messagebox.showinfo("Success", f"Audio saved as {final_mp3_path}")
+    except Exception as e:
+        messagebox.showerror("Error", f"An error occurred: {e}")
+
+def download_utube_window(button_text):
+    new_window = tk.Toplevel()
+    new_window.title(button_text)
+    new_window.geometry("500x500")
+    new_window.configure(bg='#14a3c7')
+    button_texts = ["youtube to mp4", "youtube to mp3"]
+    button_commands = [download_video, downloadaudio]
+    for text, command in zip(button_texts, button_commands):
+        button = tk.Button(new_window, text=text, command=command, bg='#6AB187', fg='black', font=('Roboto', 15))
+        button.pack(side=tk.TOP, padx=5, pady=5)
+    label = tk.Label(new_window, text="This is a file converters section, here you can convert files", bg='#14a3c7', fg='#000000', font=('Arial', 12))
+    label.pack(pady=20)
+def handle_button_1():    
     converters_window("CONVERTERS")
 
 def handle_button_2():
@@ -199,40 +354,41 @@ def handle_button_4():
 
     open_new_window("LEARN PYTHON")
 
+def handle_button_5():
+    download_utube_window("YOUTUBE TO MP3 OR MP4")
+
+
+    
+
 def display_popup():
     root = tk.Tk()
     root.title("ONE STOP")
-    
-    # Make the window full screen
-    root.attributes('-fullscreen', True)
-    root.bind("<F11>", lambda event: root.attributes('-fullscreen', not root.attributes('-fullscreen')))
-    root.bind("<Escape>", lambda event: root.attributes('-fullscreen', False))
-    
-    # Load and resize the background image to full screen size
-    bg_image_path = os.path.join(os.path.dirname(__file__), 'bg.png')
+    root.geometry("400x400")
+    root.minsize(350,380)
+    root.configure(bg='#20948B')
+    def update_time():
+        current_time = datetime.now().strftime("%I:%M:%S%p")
+        time_label.config(text = current_time)
+        time_label.after(1000,update_time)
+
+    time_label = tk.Label(root,font =("Arial",15))
+    time_label.pack(side="right",anchor="n",padx = 10,pady=10)
+    update_time()
     try:
-        screen_width = root.winfo_screenwidth()
-        screen_height = root.winfo_screenheight()
-        bg_image = Image.open(bg_image_path)
-        bg_image = bg_image.resize((screen_width, screen_height), Image.LANCZOS)
-        bg_image = ImageEnhance.Brightness(bg_image).enhance(0.5)
-        bg_photo = ImageTk.PhotoImage(bg_image)
-    except Exception as e:
-        messagebox.showerror("Error", f"Failed to load background image: {e}")
-        print(f"Error: {e}")  # Print the error for debugging
-        return
+        root.iconbitmap(logo_path)
+    except tk.TclError:
+        messagebox.showerror("Error", "Icon file not found!")
+    image = Image.open(logo_path)
+    image = image.resize((100, 100), Image.LANCZOS)
+    logo = ImageTk.PhotoImage(image)
+    label = tk.Label(root, image=logo, bg='#6AB187')
+    label.pack(side = "top")
 
-    # Create a canvas to hold the background image
-    canvas = tk.Canvas(root, width=screen_width, height=screen_height)
-    canvas.pack(fill="both", expand=True)
-    # Place the background image on the canvas
-    canvas.create_image(0, 0, image=bg_photo, anchor="nw")
-
-    button_texts = ["CONVERTERS", "BIODATA TO EXCEL", "CALCULATOR", "LEARN PYTHON"]
-    button_commands = [handle_button_1, handle_button_2, handle_button_3, handle_button_4]
-    for i, (text, command) in enumerate(zip(button_texts, button_commands)):
+    button_texts = ["CONVERTERS", "BIODATA TO EXCEL", "CALCULATOR", "LEARN PYTHON","youtube download"]
+    button_commands = [handle_button_1, handle_button_2, handle_button_3, handle_button_4,handle_button_5]
+    for text, command in zip(button_texts, button_commands):
         button = tk.Button(root, text=text, command=command, bg='#6AB187', fg='black', font=('Roboto', 15))
-        canvas.create_window(screen_width // 2, 50 + i * 60, window=button)  # Center buttons on the canvas
-
+        button.pack(side=tk.TOP, padx=5, pady=5)
     root.mainloop()
+
 display_popup()
