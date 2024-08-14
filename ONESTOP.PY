@@ -1,394 +1,179 @@
 import tkinter as tk
-from tkinter import simpledialog, messagebox, filedialog
+from tkinter import simpledialog, messagebox, filedialog, ttk
 from PIL import Image, ImageTk
-import csv
-import pandas as pd
-from openpyxl import load_workbook
-from openpyxl.chart import BarChart3D, Reference
 import os
-import yt_dlp
-from pydub import AudioSegment
-from datetime import datetime 
+import pandas as pd
+import bcrypt
 
 # Ensure the path is correct
-logo_path = os.path.join(os.path.dirname(_file_), 'Designer (1).ico')
+logo_path = os.path.join(os.path.dirname(__file__), 'Designer (1).ico')
 
-def read_txt_and_convert_to_csv(input_file, output_file):
-    with open(input_file, 'r') as txt_file, open(output_file, 'w', newline='') as csv_file:
-        csv_writer = csv.writer(csv_file)
-        for line in txt_file:
-            words = line.strip().split()
-            csv_writer.writerow(words)
+# Create the main Tkinter window
+root = tk.Tk()
+root.title("ONE STOP")
+root.geometry("400x400")
 
-def create_excel_with_3d_clustered_chart(csv_file, excel_file):
-    df = pd.read_csv(csv_file)
-    df.to_excel(excel_file, index=False, engine='openpyxl')
-    wb = load_workbook(excel_file)
-    ws = wb.active
-    chart = BarChart3D()
-    chart.type = "col"
-    chart.grouping = "clustered"
-    data = Reference(ws, min_col=2, min_row=1, max_col=ws.max_column, max_row=ws.max_row)
-    chart.add_data(data, titles_from_data=True)
-    categories = Reference(ws, min_col=1, min_row=2, max_row=ws.max_row)
-    chart.set_categories(categories)
-    ws.add_chart(chart, "E5")
-    wb.save(excel_file)
-def jpg_to_png():
-    global im1
- 
-    # import the image from the folder
-    import_filename = filedialog.askopenfilename()
-    if import_filename.endswith(".jpg"):
- 
-        im1 = Image.open(import_filename)
- 
-        # after converting the image save to desired
-        # location with the Extersion .png
-        export_filename = filedialog.asksaveasfilename(defaultextension=".png")
-        im1.save(export_filename)
- 
-        # displaying the Messaging box with the Success
-        messagebox.showinfo("success ", "your Image converted to Png")
+# Set the logo icon for the window
+root.iconbitmap(logo_path)
+
+# Dark mode variable
+dark_mode = tk.BooleanVar()
+
+# Function to toggle dark mode
+def toggle_dark_mode():
+    if dark_mode.get():
+        root.configure(bg='#1E1E1E')
+        style.configure("TButton", background='#39FF14', foreground='black')
     else:
- 
-        # if Image select is not with the Format of .jpg 
-        # then display the Error
-        Label_2 = Label(root, text="Error!", width=20,
-                        fg="red", font=("bold", 15))
-        Label_2.place(x=80, y=280)
-        messagebox.showerror("Fail!!", "Something Went Wrong...")
-    
-def png_to_jpg():
-    global im1
-    import_filename = filedialog.askopenfilename()
- 
-    if import_filename.endswith(".png"):
-        im1 = Image.open(import_filename)
-        export_filename = filedialog.asksaveasfilename(defaultextension=".jpg")
-        im1.save(export_filename)
- 
-        messagebox.showinfo("success ", "your Image converted to jpg ")
-    else:
-        Label_2 = Label(root, text="Error!", width=20,
-                        fg="red", font=("bold", 15))
-        Label_2.place(x=80, y=280)
- 
-        messagebox.showinfo("Fail!!", "Something Went Wrong...")    
+        root.configure(bg='#FFFFFF')
+        style.configure("TButton", background='#000000', foreground='white')
 
-def open_new_window(button_text):
-    new_window = tk.Toplevel()
-    new_window.title(button_text)
-    new_window.geometry("300x200")
-    new_window.configure(bg='#14a3c7')
-    try:
-        new_window.iconbitmap(logo_path)
-    except tk.TclError:
-        messagebox.showerror("Error", "Icon file not found!")
-    label = tk.Label(new_window, text=f"This is the {button_text} window", bg='#14a3c7', fg='#000000', font=('Arial', 12))
-    label.pack(pady=20)
+# Define custom styles
+style = ttk.Style()
+style.configure("TButton",
+                font=('Roboto', 15),
+                padding=10,
+                background='#000000',
+                foreground='white')
 
-def converters_window(button_text):
-    new_window = tk.Toplevel()
-    new_window.title(button_text)
-    new_window.geometry("500x500")
-    new_window.configure(bg='#14a3c7')
-    button_texts = ["JPG TO PNG", "PNG TO JPG"]
-    button_commands = [jpg_to_png, png_to_jpg]
-    for text, command in zip(button_texts, button_commands):
-        button = tk.Button(new_window, text=text, command=command, bg='#6AB187', fg='black', font=('Roboto', 15))
-        button.pack(side=tk.TOP, padx=5, pady=5)
-    label = tk.Label(new_window, text="This is a file converters section, here you can convert files", bg='#14a3c7', fg='#000000', font=('Arial', 12))
-    label.pack(pady=20)
+# Function for user registration
+def open_registration_window():
+    registration_window = tk.Toplevel(root)
+    registration_window.title("Register")
+    registration_window.geometry("300x200")
 
-def utomp4():
+    tk.Label(registration_window, text="Username:").pack(pady=5)
+    username_entry = tk.Entry(registration_window)
+    username_entry.pack(pady=5)
 
-    ydl_opts = {
-        'format': 'best',
-        'outtmpl': os.path.join(save_path, '%(title)s.%(ext)s'),
-        'verbose': True,  # Enable verbose logging
+    tk.Label(registration_window, text="Password:").pack(pady=5)
+    password_entry = tk.Entry(registration_window, show="*")
+    password_entry.pack(pady=5)
+
+    def register():
+        username = username_entry.get()
+        password = password_entry.get()
+
+        if not username or not password:
+            messagebox.showwarning("Input Error", "Please fill in both fields.")
+            return
+
+        # Load existing credentials or create a new DataFrame
+        file_exists = os.path.isfile('credentials.csv')
+        if file_exists:
+            df = pd.read_csv('credentials.csv')
+        else:
+            df = pd.DataFrame(columns=['Username', 'Password'])
+
+        if username in df['Username'].values:
+            messagebox.showwarning("Registration Error", "Username already exists.")
+            return
+
+        # Hash the password
+        hashed_password = bcrypt.hashpw(password.encode(), bcrypt.gensalt())
+
+        # Add new user to DataFrame
+        new_data = pd.DataFrame({'Username': [username], 'Password': [hashed_password.decode()]})
+        df = pd.concat([df, new_data], ignore_index=True)
+        df.to_csv('credentials.csv', index=False)
+        messagebox.showinfo("Registration Success", "User registered successfully!")
+        registration_window.destroy()
+
+    tk.Button(registration_window, text="Register", command=register).pack(pady=10)
+
+# Function for user login
+def open_login_window():
+    login_window = tk.Toplevel(root)
+    login_window.title("Login")
+    login_window.geometry("300x200")
+
+    tk.Label(login_window, text="Username:").pack(pady=5)
+    username_entry = tk.Entry(login_window)
+    username_entry.pack(pady=5)
+
+    tk.Label(login_window, text="Password:").pack(pady=5)
+    password_entry = tk.Entry(login_window, show="*")
+    password_entry.pack(pady=5)
+
+    def login():
+        username = username_entry.get()
+        password = password_entry.get()
+
+        if not username or not password:
+            messagebox.showwarning("Input Error", "Please fill in both fields.")
+            return
+
+        file_exists = os.path.isfile('credentials.csv')
+        if not file_exists:
+            messagebox.showwarning("Login Error", "No registered users found.")
+            return
+
+        df = pd.read_csv('credentials.csv')
+
+        if username not in df['Username'].values:
+            messagebox.showwarning("Login Error", "Username not found.")
+            return
+
+        stored_hashed_password = df.loc[df['Username'] == username, 'Password'].values[0]
+        if bcrypt.checkpw(password.encode(), stored_hashed_password.encode()):
+            messagebox.showinfo("Login Success", "Login successful!")
+        else:
+            messagebox.showwarning("Login Error", "Incorrect password.")
+
+    tk.Button(login_window, text="Login", command=login).pack(pady=10)
+
+# Basic Python Functions Info
+def learn_python_functions():
+    basic_functions = {
+        "print": "The print() function outputs text to the console.\nExample: print('Hello, World!')",
+        "input": "The input() function takes user input.\nExample: name = input('Enter your name: ')",
+        "if": "The if statement is used for conditional execution.\nExample: if x > 0: print('Positive')",
+        "for": "The for loop is used for iterating over a sequence.\nExample: for i in range(5): print(i)",
+        "while": "The while loop is used for repeated execution as long as a condition is true.\nExample: while x < 5: x += 1",
     }
-    
-    try:
-        with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-            ydl.download([url])
-            info_dict = ydl.extract_info(url, download=False)
-            print(f"Downloaded: {info_dict.get('title')}")
-    except Exception as e:
-        print(f"An error occurred: {e}")
+    topic = simpledialog.askstring("Learn Python", "Ask me about basic Python functions (e.g., print, input, if, for, while):")
+    if topic:
+        response = basic_functions.get(topic.lower(), "Sorry, I don't have information on that topic.")
+        messagebox.showinfo("Python Basics", response)
 
-def download_video():
-    video_url = simpledialog.askstring("Input", "Please enter the video's link")
-    if not video_url:
-        messagebox.showerror("Error", "No URL provided.")
-        return
-
-    save_directory = filedialog.askdirectory()
-    if not save_directory:
-        messagebox.showerror("Error", "No save location provided.")
-        return
-
-    # Ensure the save path is a valid path with filename placeholder
-    save_path = os.path.join(save_directory, '%(title)s.%(ext)s')
-
-    ydl_opts = {
-        'format': 'best',
-        'outtmpl': save_path,
-        'verbose': True,
-    }
-
-    try:
-        with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-            ydl.download([video_url])
-            info_dict = ydl.extract_info(video_url, download=False)
-            messagebox.showinfo("Success", f"Downloaded: {info_dict.get('title')}")
-    except Exception as e:
-        print(f"An error occurred: {e}")
-        messagebox.showerror("Error", f"An error occurred: {e}")
-def download_video_as_audio(url, output_path, filename):
-    # Define options for yt-dlp
-    ydl_opts = {
-        'format': 'bestaudio/best',
-        'outtmpl': os.path.join(output_path, 'temp_audio.%(ext)s'),
-        'postprocessors': [{
-            'key': 'FFmpegExtractAudio',
-            'preferredcodec': 'mp3',
-            'preferredquality': '320',  # Higher bitrate for better quality
-        }],
-        'postprocessor_args': [
-            '-ar', '44100'  # Standard audio sample rate
-        ],
-        'prefer_ffmpeg': True,
-        'noplaylist': True,
-    }
-
-    # Download the video
-    try:
-        with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-            ydl.download([url])
-    except Exception as e:
-        raise Exception(f"An error occurred during download: {e}")
-
-    # Convert to MP3 and save it in the desired format
-    temp_audio_path = os.path.join(output_path, 'temp_audio.mp3')
-    
-    try:
-        # Load the downloaded audio
-        audio = AudioSegment.from_mp3(temp_audio_path)
-        # Export to MP3
-        audio.export(filename, format='mp3')
-        print(f"Converted to MP3: {filename}")
-    except Exception as e:
-        raise Exception(f"An error occurred during conversion: {e}")
-    finally:
-        # Clean up the temporary file
-        if os.path.exists(temp_audio_path):
-            os.remove(temp_audio_path)
-
-
-    # Download the video
-    with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-        ydl.download([url])
-    
-    # Convert to MP3 and save it in the desired format
-    temp_audio_path = os.path.join(output_path, 'temp_audio.mp3')
-    final_mp3_path = os.path.join(output_path, filename)
-
-    try:
-        # Load the downloaded audio
-        audio = AudioSegment.from_mp3(temp_audio_path)
-        # Export to MP3
-        audio.export(final_mp3_path, format='mp3')
-        print(f"Converted to MP3: {final_mp3_path}")
-    except Exception as e:
-        print(f"An error occurred: {e}")
-
-    # Clean up the temporary file
-    if os.path.exists(temp_audio_path):
-        os.remove(temp_audio_path)
-
-def downloadaudio():
-    video_url = simpledialog.askstring("Input", "Please enter the video's link")
-    if not video_url:
-        messagebox.showerror("Error", "No URL provided.")
-        return
-
-    save_directory = filedialog.askdirectory()
-    if not save_directory:
-        messagebox.showerror("Error", "No save location provided.")
-        return
-    
-    filename = simpledialog.askstring("Input", "Please enter your file name")
-    if not filename:
-        messagebox.showerror("Error", "No file name provided.")
-        return
-
-    # Ensure the filename has the .mp3 extension
-    if not filename.endswith('.mp3'):
-        filename += '.mp3'
-
-    final_mp3_path = os.path.join(os.path.dirname(save_directory), filename)
-
-    try:
-        download_video_as_audio(video_url, os.path.dirname(save_directory), final_mp3_path)
-        messagebox.showinfo("Success", f"Audio saved as {final_mp3_path}")
-    except Exception as e:
-        messagebox.showerror("Error", f"An error occurred: {e}")
-
-def download_utube_window(button_text):
-    new_window = tk.Toplevel()
-    new_window.title(button_text)
-    new_window.geometry("500x500")
-    new_window.configure(bg='#14a3c7')
-    button_texts = ["youtube to mp4", "youtube to mp3"]
-    button_commands = [download_video, downloadaudio]
-    for text, command in zip(button_texts, button_commands):
-        button = tk.Button(new_window, text=text, command=command, bg='#6AB187', fg='black', font=('Roboto', 15))
-        button.pack(side=tk.TOP, padx=5, pady=5)
-    label = tk.Label(new_window, text="This is a file converters section, here you can convert files", bg='#14a3c7', fg='#000000', font=('Arial', 12))
-    label.pack(pady=20)
-def handle_button_1():    
-    converters_window("CONVERTERS")
-
+# BioData Collector function
 def handle_button_2():
-    messagebox.showinfo("Info", "Hi, Mister! This is the bio data collector.\nI will collect a few of your details. Let's start!")
-    user_number = simpledialog.askstring("Input", "Please enter your phone number:")
     user_name = simpledialog.askstring("Input", "Please enter your name:")
-    user_dob = simpledialog.askstring("Input", "What is your date of birth:")
-    user_city = simpledialog.askstring("Input", "What is your city name:")
+    if not user_name:
+        return
     user_age = simpledialog.askstring("Input", "What is your age:")
-    user_quali = simpledialog.askstring("Input", "What is your qualification:")
-    user_blood = simpledialog.askstring("Input", "What is your blood type:")
-    user_height = float(simpledialog.askstring("Input", "What is your height (in meters):"))
-    user_weight = int(simpledialog.askstring("Input", "What is your weight (in kilograms):"))
-    user_nationality = simpledialog.askstring("Input", "What is your nationality:")
-    user_sex = simpledialog.askstring("Input", "What is your gender:")
-    user_password = simpledialog.askstring("Input", "Please create a password:")
-    user_qus = simpledialog.askstring("Input", "What information do you need (e.g., name, birth date, etc.):")
-    er_enter = simpledialog.askstring("Input", "Please enter your password:")
-    
-    if er_enter == user_password:
-        response = {
-            "name": user_name,
-            "number": user_number,
-            "birth date": user_dob,
-            "age": user_age,
-            "qualification": user_quali,
-            "blood group": user_blood,
-            "height": user_height,
-            "weight": user_weight,
-            "nationality": user_nationality,
-            "gender": user_sex
-        }.get(user_qus, "Thank you for using the bio data collector!")
-        
-        messagebox.showinfo("Info", response)
-    else:
-        messagebox.showerror("Error", "Incorrect password!")
+    user_city = simpledialog.askstring("Input", "What is your city name:")
 
     data = {
         'Name': [user_name],
         'Age': [user_age],
-        'City': [user_city],
-        'Date of Birth': [user_dob],
-        'Phone Number': [user_number],
-        'Qualification': [user_quali],
-        'Blood Type': [user_blood],
-        'Height': [user_height],
-        'Weight': [user_weight],
-        'Nationality': [user_nationality],
-        'Gender': [user_sex]
+        'City': [user_city]
     }
 
     df = pd.DataFrame(data)
-    save_location = filedialog.asksaveasfilename(defaultextension=".xlsx", filetypes=[("Excel files", "*.xlsx")], title="Save Bio Data as")
+    save_location = filedialog.asksaveasfilename(defaultextension=".xlsx", filetypes=[("Excel files", "*.xlsx")])
     if save_location:
         df.to_excel(save_location, index=False)
         messagebox.showinfo("Info", f"Data has been saved to {save_location}")
-    open_new_window("BIO DATA TO EXCEL")
 
-def handle_button_3():
-    def add(x, y): return x + y
-    def subtract(x, y): return x - y
-    def multiply(x, y): return x * y
-    def divide(x, y): return x / y
-    
-    messagebox.showinfo("Calculator", "Select operation.\n1.Add\n2.Subtract\n3.Multiply\n4.Divide")
+    # Close the biodata window after saving
+    root.destroy()
 
-    while True:
-        choice = simpledialog.askstring("Input", "Enter choice(1/2/3/4):")
-        if choice in ('1', '2', '3', '4'):
-            num1 = float(simpledialog.askstring("Input", "Enter first number:"))
-            num2 = float(simpledialog.askstring("Input", "Enter second number:"))
+# Adding buttons with centered layout
+button_texts = ["Learn Python", "Biodata to Excel", "Toggle Dark Mode", "Register", "Login"]
+button_commands = [learn_python_functions, handle_button_2, toggle_dark_mode, open_registration_window, open_login_window]
 
-            result = {
-                '1': f"{num1} + {num2} = {add(num1, num2)}",
-                '2': f"{num1} - {num2} = {subtract(num1, num2)}",
-                '3': f"{num1} * {num2} = {multiply(num1, num2)}",
-                '4': f"{num1} / {num2} = {divide(num1, num2)}"
-            }[choice]
+for text, command in zip(button_texts, button_commands):
+    button = ttk.Button(root, text=text, style="TButton", command=command)
+    button.pack(expand=True, pady=10)
 
-            messagebox.showinfo("Result", result)
-            break
-        else:
-            messagebox.showerror("Error", "Invalid Input")
-    open_new_window("CALCULATOR")
+# Dark mode toggle button
+dark_mode_button = ttk.Checkbutton(root, text="Dark Mode", variable=dark_mode, command=toggle_dark_mode)
+dark_mode_button.pack(expand=True, pady=10)
 
-def handle_button_4():
-    basics_info = {
-        "print": "The print() function outputs text to the console. Example: print('Hello, World!')",
-        "input": "The input() function takes user input. Example: name = input('Enter your name: ')",
-        "if": "The if statement is used for conditional execution. Example: if x > 0: print('Positive')",
-        "for": "The for loop is used for iterating over a sequence. Example: for i in range(5): print(i)",
-        "while": "The while loop is used for repeated execution as long as a condition is true. Example: while x < 5: x += 1",
-        "def": "The def keyword is used to define a function. Example: def greet(name): print('Hello, ' + name)",
-        "return": "The return statement exits a function and returns a value. Example: def add(a, b): return a + b"
-    }
+# Background customization
+root.configure(bg='#FFFFFF')  # Light background as default
 
-    while True:
-        topic = simpledialog.askstring("Python Basics AI", "Ask me about basic Python functions (e.g., print, input, if, for, while, def, return):")
-        if topic:
-            response = basics_info.get(topic.lower(), "Sorry, I don't have information on that topic.")
-            messagebox.showinfo("Python Basics AI", response)
-        else:
-            break
+# Start the Tkinter event loop
+root.mainloop()
 
-    open_new_window("LEARN PYTHON")
-
-def handle_button_5():
-    download_utube_window("YOUTUBE TO MP3 OR MP4")
-
-
-    
-
-def display_popup():
-    root = tk.Tk()
-    root.title("ONE STOP")
-    root.geometry("400x400")
-    root.minsize(350,380)
-    root.configure(bg='#20948B')
-    def update_time():
-        current_time = datetime.now().strftime("%I:%M:%S%p")
-        time_label.config(text = current_time)
-        time_label.after(1000,update_time)
-
-    time_label = tk.Label(root,font =("Arial",15))
-    time_label.pack(side="right",anchor="n",padx = 10,pady=10)
-    update_time()
-    try:
-        root.iconbitmap(logo_path)
-    except tk.TclError:
-        messagebox.showerror("Error", "Icon file not found!")
-    image = Image.open(logo_path)
-    image = image.resize((100, 100), Image.LANCZOS)
-    logo = ImageTk.PhotoImage(image)
-    label = tk.Label(root, image=logo, bg='#6AB187')
-    label.pack(side = "top")
-
-    button_texts = ["CONVERTERS", "BIODATA TO EXCEL", "CALCULATOR", "LEARN PYTHON","youtube download"]
-    button_commands = [handle_button_1, handle_button_2, handle_button_3, handle_button_4,handle_button_5]
-    for text, command in zip(button_texts, button_commands):
-        button = tk.Button(root, text=text, command=command, bg='#6AB187', fg='black', font=('Roboto', 15))
-        button.pack(side=tk.TOP, padx=5, pady=5)
-    root.mainloop()
-
-display_popup()
