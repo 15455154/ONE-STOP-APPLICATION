@@ -26,7 +26,7 @@ def toggle_dark_mode():
         style.configure("TButton", background='#39FF14', foreground='black')
     else:
         root.configure(bg='#FFFFFF')
-        style.configure("TButton", background='#000000', foreground='white')
+        style.configure("TButton", background='#000000', foreground='black')
 
 # Define custom styles
 style = ttk.Style()
@@ -34,7 +34,7 @@ style.configure("TButton",
                 font=('Roboto', 15),
                 padding=10,
                 background='#000000',
-                foreground='white')
+                foreground='black')
 
 # Function for user registration
 def open_registration_window():
@@ -78,6 +78,7 @@ def open_registration_window():
         df.to_csv('credentials.csv', index=False)
         messagebox.showinfo("Registration Success", "User registered successfully!")
         registration_window.destroy()
+        open_login_window()  # Automatically open login window after registration
 
     tk.Button(registration_window, text="Register", command=register).pack(pady=10)
 
@@ -117,10 +118,13 @@ def open_login_window():
         stored_hashed_password = df.loc[df['Username'] == username, 'Password'].values[0]
         if bcrypt.checkpw(password.encode(), stored_hashed_password.encode()):
             messagebox.showinfo("Login Success", "Login successful!")
+            login_window.destroy()
+            show_main_app()  # Show the main app after successful login
         else:
             messagebox.showwarning("Login Error", "Incorrect password.")
 
     tk.Button(login_window, text="Login", command=login).pack(pady=10)
+    tk.Button(login_window, text="Register", command=open_registration_window).pack(pady=10)  # Option to register
 
 # Basic Python Functions Info
 def learn_python_functions():
@@ -129,7 +133,6 @@ def learn_python_functions():
         "input": "The input() function takes user input.\nExample: name = input('Enter your name: ')",
         "if": "The if statement is used for conditional execution.\nExample: if x > 0: print('Positive')",
         "for": "The for loop is used for iterating over a sequence.\nExample: for i in range(5): print(i)",
-        "while": "The while loop is used for repeated execution as long as a condition is true.\nExample: while x < 5: x += 1",
     }
     topic = simpledialog.askstring("Learn Python", "Ask me about basic Python functions (e.g., print, input, if, for, while):")
     if topic:
@@ -156,24 +159,48 @@ def handle_button_2():
         df.to_excel(save_location, index=False)
         messagebox.showinfo("Info", f"Data has been saved to {save_location}")
 
-    # Close the biodata window after saving
-    root.destroy()
+# Function to show the main app
+def show_main_app():
+    for widget in main_buttons:
+        widget.pack(expand=True, pady=10)
+    # Remove login window if still open
+    for widget in root.winfo_children():
+        if isinstance(widget, tk.Toplevel):
+            widget.destroy()
 
-# Adding buttons with centered layout
-button_texts = ["Learn Python", "Biodata to Excel", "Toggle Dark Mode", "Register", "Login"]
-button_commands = [learn_python_functions, handle_button_2, toggle_dark_mode, open_registration_window, open_login_window]
+# Adding a Sliding Full Bar with Animation
+def slide_in_bar():
+    bar_width = 200
+    for x in range(-bar_width, 0, 20):
+        side_bar.place(x=x, y=0, width=bar_width, height=root.winfo_height())
+        root.update()
+    side_bar.place(x=0, y=0, width=bar_width, height=root.winfo_height())
 
-for text, command in zip(button_texts, button_commands):
-    button = ttk.Button(root, text=text, style="TButton", command=command)
-    button.pack(expand=True, pady=10)
+def slide_out_bar():
+    bar_width = 200
+    for x in range(0, -bar_width, -20):
+        side_bar.place(x=x, y=0, width=bar_width, height=root.winfo_height())
+        root.update()
 
-# Dark mode toggle button
-dark_mode_button = ttk.Checkbutton(root, text="Dark Mode", variable=dark_mode, command=toggle_dark_mode)
-dark_mode_button.pack(expand=True, pady=10)
+# Side bar
+side_bar = tk.Frame(root, bg='gray')
+
+# Add buttons to the side bar
+ttk.Button(side_bar, text="Learn Python", command=learn_python_functions).pack(fill='x', padx=10, pady=5)
+ttk.Button(side_bar, text="Biodata to Excel", command=handle_button_2).pack(fill='x', padx=10, pady=5)
+ttk.Button(side_bar, text="Dark Mode", command=toggle_dark_mode).pack(fill='x', padx=10, pady=5)
+
+# Button with three slashes to open/closev the side bar
+menu_button = tk.Button(root, text="≡", command=slide_in_bar, font=('Arial', 18), bg='black', fg='white', borderwidth=0)
+menu_button.pack(anchor='nw', padx=10, pady=10)
+
+# To close the side bar, click anywhere outside of it
+root.bind("<Button-1>", lambda event: slide_out_bar() if event.x > 200 else None)
 
 # Background customization
 root.configure(bg='#FFFFFF')  # Light background as default
 
 # Start the Tkinter event loop
+open_login_window()  # Automatically open the login window when the app starts
 root.mainloop()
 
