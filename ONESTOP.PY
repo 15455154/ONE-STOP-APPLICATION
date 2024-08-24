@@ -1,5 +1,6 @@
 import tkinter as tk
 from tkinter import simpledialog, messagebox, filedialog, ttk
+from tkinterdnd2 import TkinterDnD, DND_FILES
 from PIL import Image, ImageTk
 import os
 import pandas as pd
@@ -24,9 +25,11 @@ def toggle_dark_mode():
     if dark_mode.get():
         root.configure(bg='#1E1E1E')
         style.configure("TButton", background='#39FF14', foreground='black')
+        side_bar.configure(bg='#333333')
     else:
         root.configure(bg='#FFFFFF')
         style.configure("TButton", background='#000000', foreground='black')
+        side_bar.configure(bg='black')
 
 # Define custom styles
 style = ttk.Style()
@@ -113,7 +116,7 @@ def open_login_window():
 
         if username not in df['Username'].values:
             messagebox.showwarning("Login Error", "Username not found.")
-            return
+            return 0
 
         stored_hashed_password = df.loc[df['Username'] == username, 'Password'].values[0]
         if bcrypt.checkpw(password.encode(), stored_hashed_password.encode()):
@@ -183,14 +186,13 @@ def slide_out_bar():
         root.update()
 
 # Side bar
-side_bar = tk.Frame(root, bg='gray')
+side_bar = tk.Frame(root, bg='white')
 
 # Add buttons to the side bar
-ttk.Button(side_bar, text="Learn Python", command=learn_python_functions).pack(fill='x', padx=10, pady=5)
 ttk.Button(side_bar, text="Biodata to Excel", command=handle_button_2).pack(fill='x', padx=10, pady=5)
 ttk.Button(side_bar, text="Dark Mode", command=toggle_dark_mode).pack(fill='x', padx=10, pady=5)
 
-# Button with three slashes to open/closev the side bar
+# Button with three slashes to open/close the side bar
 menu_button = tk.Button(root, text="≡", command=slide_in_bar, font=('Arial', 18), bg='black', fg='white', borderwidth=0)
 menu_button.pack(anchor='nw', padx=10, pady=10)
 
@@ -198,9 +200,194 @@ menu_button.pack(anchor='nw', padx=10, pady=10)
 root.bind("<Button-1>", lambda event: slide_out_bar() if event.x > 200 else None)
 
 # Background customization
-root.configure(bg='#FFFFFF')  # Light background as default
+root.configure(bg='#000000')  # Light background as default
+
+# CodeQuest Game
+class CodeQuest:
+    def __init__(self, root):
+        self.root = root
+        self.root.title("CodeQuest")
+        self.current_level = 0
+        self.history = []
+        self.create_widgets()
+        self.show_level()
+
+    def create_widgets(self):
+        # Title label
+        self.title_label = tk.Label(self.root, text="CodeQuest", font=("Arial", 16))
+        self.title_label.pack(pady=10)
+
+        # Instruction label
+        self.instruction_label = tk.Label(self.root, text="", wraplength=400)
+        self.instruction_label.pack(pady=10)
+
+        # Code input area
+        self.code_text = tk.Text(self.root, height=10, width=50)
+        self.code_text.pack(pady=10)
+
+        # Run button
+        self.run_button = tk.Button(self.root, text="Run Code", command=self.run_code)
+        self.run_button.pack(side=tk.LEFT, padx=10)
+
+        # History button
+        self.history_button = tk.Button(self.root, text="View History", command=self.view_history)
+        self.history_button.pack(side=tk.LEFT, padx=10)
+
+        # Next button
+        self.next_button = tk.Button(self.root, text="Next", command=self.next_level)
+        self.next_button.pack(side=tk.RIGHT, padx=10)
+
+    def show_level(self):
+        if self.current_level == 0:
+            self.show_intro()
+        elif self.current_level == 1:
+            self.show_print_level()
+        elif self.current_level == 2:
+            self.show_input_level()
+        elif self.current_level == 3:
+            self.show_variable_level()
+        elif self.current_level == 4:
+            self.show_if_level()
+        else:
+            messagebox.showinfo("Congratulations", "You've completed all levels!")
+
+    def show_intro(self):
+        self.instruction_label.config(text="Welcome to CodeQuest! We'll start by learning basic Python concepts. Click 'Next' to begin.")
+        self.code_text.delete("1.0", tk.END)
+        self.run_button.config(state=tk.DISABLED)
+
+    def show_print_level(self):
+        self.instruction_label.config(text="Level 1: Print Statements\n\nWrite a Python program that prints 'Hello, World!'.")
+        self.run_button.config(state=tk.NORMAL)
+        self.code_text.delete("1.0", tk.END)
+
+    def show_input_level(self):
+        self.instruction_label.config(text="Level 2: Input\n\nWrite a Python program that asks for your name and prints a greeting message with your name.")
+        self.run_button.config(state=tk.NORMAL)
+        self.code_text.delete("1.0", tk.END)
+
+    def show_variable_level(self):
+        self.instruction_label.config(text="Level 3: Variables\n\nCreate a variable 'x' and assign it the value 5. Print the value of 'x'.")
+        self.run_button.config(state=tk.NORMAL)
+        self.code_text.delete("1.0", tk.END)
+
+    def show_if_level(self):
+        self.instruction_label.config(text="Level 4: If Statements\n\nWrite a Python program that asks for a number and prints 'Even' if the number is even and 'Odd' if it is odd.")
+        self.run_button.config(state=tk.NORMAL)
+        self.code_text.delete("1.0", tk.END)
+
+    def run_code(self):
+        code = self.code_text.get("1.0", tk.END)
+        self.history.append(code)
+        try:
+            exec_globals = {}
+            exec(code, {}, exec_globals)
+            if self.current_level == 1 and exec_globals.get('print_message') == "Hello, World!":
+                self.complete_level()
+            elif self.current_level == 2 and exec_globals.get('name') is not None:
+                self.complete_level()
+            elif self.current_level == 3 and 'x' in exec_globals and exec_globals['x'] == 5:
+                self.complete_level()
+            elif self.current_level == 4 and 'number' in exec_globals:
+                number = exec_globals['number']
+                if (number % 2 == 0 and exec_globals.get('result') == 'Even') or (number % 2 != 0 and exec_globals.get('result') == 'Odd'):
+                    self.complete_level()
+                else:
+                    self.incorrect_feedback()
+            else:
+                self.incorrect_feedback()
+        except Exception as e:
+            messagebox.showerror("Error", f"Error in your code: {e}")
+
+    def complete_level(self):
+        messagebox.showinfo("Congratulations", "You've completed this level!")
+        self.current_level += 1
+        self.show_level()
+
+    def incorrect_feedback(self):
+        messagebox.showerror("Result", "Oops! Your code didn't meet the requirements. Try again.")
+
+    def view_history(self):
+        history_text = "\n".join(self.history)
+        messagebox.showinfo("Code History", history_text)
+
+    def next_level(self):
+        self.current_level += 1
+        self.show_level()
+
+# Image Converter Tool
+def convert_image(filepath, output_format):
+    # Load the image
+    image = Image.open(filepath)
+    
+    # Save it in the selected format
+    output_filename = os.path.splitext(filepath)[0] + '.' + output_format
+    image.save(output_filename, output_format.upper())
+    
+    # Notify the user
+    messagebox.showinfo("Success", f"Image saved as {output_filename}")
+
+def on_drop(event):
+    # Get the dropped file path
+    filepath = event.data
+    
+    # Check if it is a valid image file
+    if filepath.endswith(('.png', '.jpg', '.jpeg', '.bmp', '.gif', '.tiff')):
+        img = Image.open(filepath)
+        img.thumbnail((300, 300))  # Resize image for display
+        
+        # Display the image
+        img = ImageTk.PhotoImage(img)
+        lbl_image.config(image=img)
+        lbl_image.image = img
+        
+        # Store the file path
+        lbl_image.filepath = filepath
+    else:
+        messagebox.showerror("Invalid file", "Please drop a valid image file.")
+
+def save_image():
+    # Get the file path and selected format
+    filepath = getattr(lbl_image, 'filepath', None)
+    output_format = format_var.get()
+    
+    if filepath and output_format:
+        convert_image(filepath, output_format)
+    else:
+        messagebox.showerror("Error", "No image loaded or format selected.")
+
+# Initialize the main window
+image_converter_root = TkinterDnD.Tk()
+image_converter_root.title("Image Format Converter")
+image_converter_root.geometry("400x400")
+
+# Label to show the dropped image
+lbl_image = tk.Label(image_converter_root, text="Drag and drop an image here", bg="gray", width=40, height=10)
+lbl_image.pack(pady=20)
+
+# Bind the drag-and-drop event
+lbl_image.drop_target_register(DND_FILES)
+lbl_image.dnd_bind('<<Drop>>', on_drop)
+
+# Dropdown to select the output format
+format_var = tk.StringVar(value="png")
+formats = ["png", "jpeg", "bmp", "gif", "tiff"]
+tk.OptionMenu(image_converter_root, format_var, *formats).pack(pady=10)
+
+# Button to save the converted image
+btn_save = tk.Button(image_converter_root, text="Convert and Save Image", command=save_image)
+btn_save.pack(pady=10)
+
+# Function to start CodeQuest
+def start_codequest():
+    root.withdraw()  # Hide the main window
+    codequest_root = tk.Tk()
+    app = CodeQuest(codequest_root)
+    codequest_root.mainloop()
+
+# Add a button to start CodeQuest
+ttk.Button(root, text="Start CodeQuest", command=start_codequest).pack(pady=10)
 
 # Start the Tkinter event loop
 open_login_window()  # Automatically open the login window when the app starts
 root.mainloop()
-
