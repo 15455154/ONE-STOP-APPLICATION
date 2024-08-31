@@ -1,5 +1,5 @@
 import customtkinter as ctk
-from tkinter import simpledialog, messagebox, filedialog, ttk
+from tkinter import simpledialog, messagebox, filedialog
 from tkinterdnd2 import TkinterDnD, DND_FILES
 from PIL import Image, ImageTk
 import os
@@ -22,14 +22,43 @@ root.iconbitmap(logo_path)
 # Dark mode variable
 dark_mode = ctk.BooleanVar()
 
+# Color schemes
+dark_mode_colors = {
+    "background": "#1E1E1E",
+    "sidebar": "#2E2E2E",
+    "button": "#3E3E3E",
+    "text": "#FFFFFF"  # White text for dark mode
+}
+
+light_mode_colors = {
+    "background": "#FFFFFF",
+    "sidebar": "#F0F0F0",
+    "button": "#E0E0E0",
+    "text": "#000000"  # Black text for light mode
+}
+
 # Function to toggle dark mode
 def toggle_dark_mode():
     if dark_mode.get():
-        root.configure(bg_color='#1E1E1E')
-        side_bar.configure(bg_color='#000000')
+        root.configure(bg=dark_mode_colors["background"])
+        side_bar.configure(fg_color=dark_mode_colors["sidebar"])
+        for widget in root.winfo_children():
+            if isinstance(widget, ctk.CTkLabel) or isinstance(widget, ctk.CTkButton) or isinstance(widget, ctk.CTkTextbox):
+                widget.configure(fg_color=dark_mode_colors["button"], text_color=dark_mode_colors["text"])
+            if isinstance(widget, ctk.CTkToplevel):
+                for sub_widget in widget.winfo_children():
+                    if isinstance(sub_widget, ctk.CTkLabel) or isinstance(sub_widget, ctk.CTkButton):
+                        sub_widget.configure(text_color=dark_mode_colors["text"])
     else:
-        root.configure(bg_color='#FFFFFF')
-        side_bar.configure(bg_color='#FFFFFF')
+        root.configure(bg=light_mode_colors["background"])
+        side_bar.configure(fg_color=light_mode_colors["sidebar"])
+        for widget in root.winfo_children():
+            if isinstance(widget, ctk.CTkLabel) or isinstance(widget, ctk.CTkButton) or isinstance(widget, ctk.CTkTextbox):
+                widget.configure(fg_color=light_mode_colors["button"], text_color=light_mode_colors["text"])
+            if isinstance(widget, ctk.CTkToplevel):
+                for sub_widget in widget.winfo_children():
+                    if isinstance(sub_widget, ctk.CTkLabel) or isinstance(sub_widget, ctk.CTkButton):
+                        sub_widget.configure(text_color=light_mode_colors["text"])
 
 # Function for user registration
 def open_registration_window():
@@ -146,6 +175,38 @@ def show_main_app():
     for widget in root.winfo_children():
         if isinstance(widget, ctk.CTkToplevel):
             widget.destroy()
+    
+    # Initialize the sidebar frame
+    global side_bar
+    side_bar = ctk.CTkFrame(root, width=200, height=root.winfo_height(), fg_color=light_mode_colors["sidebar"])
+    side_bar.pack(side="left", fill="y")
+
+    # Add widgets to sidebar
+    btn1 = ctk.CTkButton(side_bar, text="Open BioData Collector", command=handle_button_2)
+    btn1.pack(pady=20)
+
+    btn2 = ctk.CTkButton(side_bar, text="Start CodeQuest", command=lambda: CodeQuest(root))
+    btn2.pack(pady=20)
+
+    btn3 = ctk.CTkButton(side_bar, text="Convert Image", command=open_image_converter)
+    btn3.pack(pady=20)
+
+    # Add dark mode toggle
+    dark_mode_toggle = ctk.CTkSwitch(side_bar, text="Dark Mode", variable=dark_mode, command=toggle_dark_mode)
+    dark_mode_toggle.pack(pady=20)
+
+    # Add sidebar movement functionality
+    def on_drag_start(event):
+        side_bar._drag_start_x = event.x
+        side_bar._drag_start_y = event.y
+
+    def on_drag_motion(event):
+        x = side_bar.winfo_x() - side_bar._drag_start_x + event.x
+        y = side_bar.winfo_y() - side_bar._drag_start_y + event.y
+        side_bar.place(x=x, y=y)
+
+    side_bar.bind("<Button-1>", on_drag_start)
+    side_bar.bind("<B1-Motion>", on_drag_motion)
 
 # Image Converter Tool
 def convert_image(filepath, output_format):
@@ -161,168 +222,37 @@ def convert_image(filepath, output_format):
 
 def on_drop(event):
     # Get the dropped file path
-    filepath = event.data
-    
-    # Check if it is a valid image file
-    if filepath.endswith(('.png', '.jpg', '.jpeg', '.bmp', '.gif', '.tiff')):
-        img = Image.open(filepath)
-        img.thumbnail((300, 300))  # Resize image for display
-        
-        # Display the image
-        img = ImageTk.PhotoImage(img)
-        lbl_image.configure(image=img)
-        lbl_image.image = img
-        
-        # Store the file path
-        lbl_image.filepath = filepath
+    file_path = event.data
+    file_path = file_path.strip('{}')  # Remove curly braces if present
+
+    if os.path.isfile(file_path):
+        convert_image(file_path, format_var.get())
     else:
-        messagebox.showerror("Invalid file", "Please drop a valid image file.")
+        messagebox.showwarning("Invalid File", "The dropped file is not valid.")
 
-def save_image():
-    # Get the file path and selected format
-    filepath = getattr(lbl_image, 'filepath', None)
-    output_format = format_var.get()
-    
-    if filepath and output_format:
-        convert_image(filepath, output_format)
-    else:
-        messagebox.showerror("Error", "No image loaded or format selected.")
-
-# CodeQuest Game
-class CodeQuest:
-    def __init__(self, root):
-        self.root = root
-        self.root.title("CodeQuest")
-        self.current_level = 0
-        self.history = []
-        self.create_widgets()
-        self.show_level()
-
-    def create_widgets(self):
-        # Title label
-        self.title_label = ctk.CTkLabel(self.root, text="CodeQuest", font=("Arial", 16))
-        self.title_label.pack(pady=10)
-
-        # Instruction label
-        self.instruction_label = ctk.CTkLabel(self.root, text="", wraplength=400)
-        self.instruction_label.pack(pady=10)
-
-        # Code input area
-        self.code_text = ctk.CTkTextbox(self.root, height=10, width=50)
-        self.code_text.pack(pady=10)
-
-        # Run button
-        self.run_button = ctk.CTkButton(self.root, text="Run Code", command=self.run_code)
-        self.run_button.pack(side=ctk.LEFT, padx=10)
-
-        # History button
-        self.history_button = ctk.CTkButton(self.root, text="View History", command=self.view_history)
-        self.history_button.pack(side=ctk.LEFT, padx=10)
-
-        # Next button
-        self.next_button = ctk.CTkButton(self.root, text="Next", command=self.next_level)
-        self.next_button.pack(side=ctk.RIGHT, padx=10)
-
-    def show_level(self):
-        if self.current_level == 0:
-            self.show_intro()
-        elif self.current_level == 1:
-            self.show_print_level()
-        elif self.current_level == 2:
-            self.show_input_level()
-        elif self.current_level == 3:
-            self.show_variable_level()
-        elif self.current_level == 4:
-            self.show_if_level()
-        else:
-            messagebox.showinfo("Congratulations", "You've completed all levels!")
-
-    def show_intro(self):
-        self.instruction_label.configure(text="Welcome to CodeQuest! We'll start by learning basic Python concepts. Click 'Next' to begin.")
-        self.code_text.delete("1.0", ctk.END)
-        self.run_button.configure(state=ctk.DISABLED)
-
-    def show_print_level(self):
-        self.instruction_label.configure(text="Level 1: Use the print() function to display 'Hello, World!'.")
-        self.code_text.delete("1.0", ctk.END)
-        self.run_button.configure(state=ctk.NORMAL)
-
-    def show_input_level(self):
-        self.instruction_label.configure(text="Level 2: Use the input() function to ask the user for their name.")
-        self.code_text.delete("1.0", ctk.END)
-
-    def show_variable_level(self):
-        self.instruction_label.configure(text="Level 3: Create a variable to store the user's age and print it.")
-        self.code_text.delete("1.0", ctk.END)
-
-    def show_if_level(self):
-        self.instruction_label.configure(text="Level 4: Use an if statement to check if the user's age is over 18.")
-        self.code_text.delete("1.0", ctk.END)
-
-    def run_code(self):
-        code = self.code_text.get("1.0", ctk.END)
-        self.history.append(code)
-
-        try:
-            exec(code, {})
-            messagebox.showinfo("Success", "Code ran successfully!")
-        except Exception as e:
-            messagebox.showerror("Error", f"An error occurred:\n{e}")
-
-    def view_history(self):
-        history_window = ctk.CTkToplevel(self.root)
-        history_window.title("Code History")
-        history_window.geometry("400x300")
-
-        history_text = ctk.CTkTextbox(history_window, state=ctk.NORMAL)
-        history_text.pack(expand=True, fill=ctk.BOTH)
-
-        for entry in self.history:
-            history_text.insert(ctk.END, entry + "\n")
-
-    def next_level(self):
-        self.current_level += 1
-        self.show_level()
-
-# Main sidebar for options
-side_bar = ctk.CTkFrame(root)
-side_bar.pack(side=ctk.LEFT, fill='y', padx=10, pady=10)
-
-ctk.CTkButton(side_bar, text="Register", command=open_registration_window).pack(fill='x', padx=10, pady=5)
-ctk.CTkButton(side_bar, text="Login", command=open_login_window).pack(fill='x', padx=10, pady=5)
-ttk.Button(side_bar, text="Biodata to Excel", command=handle_button_2).pack(fill='x', padx=10, pady=5)
-
-# Dark mode toggle
-dark_mode_toggle = ctk.CTkCheckBox(side_bar, text="Dark Mode", variable=dark_mode, command=toggle_dark_mode)
-dark_mode_toggle.pack(fill='x', padx=10, pady=5)
-
-# Button to open Image Converter
 def open_image_converter():
-    converter_window = ctk.CTkToplevel(root)
-    converter_window.title("Image Converter")
-    converter_window.geometry("400x400")
+    image_converter_window = ctk.CTkToplevel(root)
+    image_converter_window.title("Image Converter")
+    image_converter_window.geometry("300x300")
 
-    lbl_instruction = ctk.CTkLabel(converter_window, text="Drag and drop an image file below:")
-    lbl_instruction.pack(pady=10)
+    global format_var
+    format_var = ctk.StringVar(value="png")
 
-    global lbl_image
-    lbl_image = ctk.CTkLabel(converter_window)
-    lbl_image.pack(pady=10)
+    ctk.CTkLabel(image_converter_window, text="Select output format:").pack(pady=5)
+    formats = ["png", "jpg", "bmp", "gif", "tiff"]
+    for format in formats:
+        ctk.CTkRadioButton(image_converter_window, text=format.upper(), variable=format_var, value=format).pack(pady=2)
 
-    format_var = ctk.StringVar()
-    format_var.set("png")  # Default format is PNG
+    ctk.CTkButton(image_converter_window, text="Save Image", command=lambda: convert_image(file_path, format_var.get())).pack(pady=10)
 
-    ctk.CTkOptionMenu(converter_window, variable=format_var, values=["png", "jpg", "bmp", "gif", "tiff"]).pack(pady=10)
-    ctk.CTkButton(converter_window, text="Convert Image", command=save_image).pack(pady=10)
+    # Drag and drop functionality
+    image_converter_window.drop_target_register(DND_FILES)
+    image_converter_window.dnd_bind('<<Drop>>', on_drop)
 
-    converter_window.drop_target_register(DND_FILES)
-    converter_window.dnd_bind('<<Drop>>', on_drop)
+# Initialize the main window
+open_login_window()  # Open the login window initially
 
-ttk.Button(side_bar, text="Image Converter", command=open_image_converter).pack(fill='x', padx=10, pady=5)
-
-# Initialize CodeQuest game
-codequest = CodeQuest(root)
-
-# Run the main Tkinter loop
+# Run the application
 root.mainloop()
+
 
